@@ -5,7 +5,7 @@ import { ArrowLink } from "../ArrowLink";
 import { Container } from "../Container";
 import { MetaLabel } from "../MetaLabel";
 
-const HEADLINE = "Not every frame of speech needs the same compute.";
+const HEADLINE = "Some syllables are harder than others.";
 const ease = [0.22, 1, 0.36, 1] as const;
 
 export function Hero() {
