@@ -1,0 +1,134 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------
+   Adaptive TTS design tokens (source of truth: CLAUDE.md)
+   Accent: pale green. Never introduce the pale blue alternative.
+------------------------------------------------------------------ */
+@theme {
+  /* Color: light canvas (default) */
+  --color-paper: #f4f2ec;
+  --color-ink: #101316;
+  --color-muted: #5e656b;
+  --color-rule: #d8d6cf;
+  --color-paper-hover: #eceae4; /* row hover: paper + ~3% ink */
+  --color-accent: #b8f5d4;
+
+  /* Color: dark band (Proximal-style), used for exactly one section */
+  --color-night: #0a0a0a;
+  --color-night-ink: #ececec;
+  --color-night-muted: #8b9196;
+  --color-night-rule: #26292c;
+
+  /* Type families (wired from next/font in app/layout.tsx) */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* Type scale */
+  --text-hero: clamp(2.75rem, 1.35rem + 5.2vw, 6rem); /* 44 → 96px */
+  --text-hero--line-height: 0.98;
+  --text-hero--letter-spacing: -0.04em;
+
+  --text-h2: clamp(2.25rem, 1.75rem + 1.6vw, 3.25rem); /* 36 → 52px */
+  --text-h2--line-height: 1.04;
+  --text-h2--letter-spacing: -0.03em;
+
+  --text-lede: clamp(1.5rem, 1.2rem + 1vw, 2.25rem); /* 24 → 36px */
+  --text-lede--line-height: 1.18;
+  --text-lede--letter-spacing: -0.02em;
+
+  --text-body: 1.125rem; /* 18px */
+  --text-body--line-height: 1.55;
+
+  --text-meta: 0.75rem; /* 12px */
+  --text-meta--line-height: 1.4;
+  --text-meta--letter-spacing: 0.1em;
+
+  /* Layout */
+  --container-page: 82rem; /* 1312px */
+  --container-measure: 42rem; /* 672px prose measure */
+
+  /* Motion */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-pulse-dot: pulse-dot 2.4s ease-in-out infinite;
+  @keyframes pulse-dot {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.35;
+      transform: scale(0.8);
+    }
+  }
+}
+
+@layer base {
+  html {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    font-feature-settings: "ss01";
+  }
+
+  ::selection {
+    background: var(--color-accent);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@utility meta {
+  font-family: var(--font-mono);
+  font-size: var(--text-meta);
+  line-height: var(--text-meta--line-height);
+  letter-spacing: var(--text-meta--letter-spacing);
+  text-transform: uppercase;
+}
+
+@utility gutter {
+  padding-inline: 1.5rem; /* 24 */
+  @media (width >= 48rem) {
+    padding-inline: 3rem; /* 48 */
+  }
+  @media (width >= 80rem) {
+    padding-inline: 4rem; /* 64 */
+  }
+}
+
+@utility section-y {
+  padding-block: 6rem; /* 96 */
+  @media (width >= 64rem) {
+    padding-block: 9rem; /* 144 */
+  }
+}

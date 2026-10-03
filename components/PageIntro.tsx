@@ -1,0 +1,26 @@
+import { Container } from "./Container";
+import { MetaLabel } from "./MetaLabel";
+
+/** Shared header for inner pages: meta label, H2-scale title, one paragraph. */
+export function PageIntro({
+  label,
+  title,
+  children,
+}: {
+  label: string;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="pt-20 pb-16 md:pt-28 lg:pt-32 lg:pb-24">
+      <Container>
+        <div className="flex flex-wrap items-baseline justify-between gap-4">
+          <MetaLabel>{label}</MetaLabel>
+          <MetaLabel className="border border-rule px-2 py-1">Coming soon</MetaLabel>
+        </div>
+        <h1 className="mt-8 max-w-[18ch] text-h2 font-normal text-balance">{title}</h1>
+        <p className="mt-8 max-w-measure md:text-xl md:leading-[1.5]">{children}</p>
+      </Container>
+    </section>
+  );
+}
