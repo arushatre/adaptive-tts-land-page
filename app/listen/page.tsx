@@ -1,25 +1,11 @@
 import type { Metadata } from "next";
 import { Container } from "@/components/Container";
+import { MetaLabel } from "@/components/MetaLabel";
 import { PageIntro } from "@/components/PageIntro";
-import { WaveformPlayer } from "@/components/WaveformPlayer";
-import { DEMO_DURATION, DEMO_SENTENCE, STEP_BUDGET } from "@/lib/content";
-import { adaptiveSchedule, buildTimeline, fixedSchedule } from "@/lib/speech";
+import { SampleList } from "@/components/SampleList";
+import { DEMO_SENTENCE } from "@/lib/content";
 
 export const metadata: Metadata = { title: "Listen" };
-
-const FRAMES = 120;
-const MAX = STEP_BUDGET.fixed;
-const timeline = buildTimeline(DEMO_SENTENCE);
-
-const SAMPLES = [
-  { method: "Full steps", schedule: fixedSchedule(FRAMES, MAX, MAX) },
-  { method: "Uniform reduction", schedule: fixedSchedule(FRAMES, 8, MAX) },
-  { method: "Step distillation", schedule: fixedSchedule(FRAMES, 8, MAX) },
-  {
-    method: "Adaptive TTS",
-    schedule: adaptiveSchedule(timeline, FRAMES, STEP_BUDGET.adaptiveMean, MAX),
-  },
-];
 
 export default function ListenPage() {
   return (
@@ -31,23 +17,11 @@ export default function ListenPage() {
       </PageIntro>
       <section aria-label="Samples" className="pb-24 lg:pb-36">
         <Container>
-          <ul className="border-t border-ink">
-            {SAMPLES.map((s) => (
-              <li key={s.method} className="border-b border-rule py-8">
-                <WaveformPlayer
-                  align="bottom"
-                  ceiling
-                  bars={s.schedule.bars}
-                  duration={DEMO_DURATION}
-                  label={`${s.method} sample`}
-                  meta={[
-                    s.method,
-                    `${Number.isInteger(s.schedule.mean) ? s.schedule.mean : s.schedule.mean.toFixed(1)} steps/frame`,
-                  ]}
-                />
-              </li>
-            ))}
-          </ul>
+          <div className="mb-10 flex flex-col gap-3">
+            <MetaLabel>Sample text</MetaLabel>
+            <p className="max-w-[40ch] text-lede">“{DEMO_SENTENCE}”</p>
+          </div>
+          <SampleList />
         </Container>
       </section>
     </>

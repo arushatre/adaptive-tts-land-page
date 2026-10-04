@@ -2,15 +2,21 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { LayoutGroup, motion } from "motion/react";
 import { useEffect, useId, useState } from "react";
-import { NAV_LINKS } from "@/lib/site";
+import { ANNOUNCEMENT, NAV_LINKS } from "@/lib/site";
+import { Arrow } from "./ArrowLink";
 import { Container } from "./Container";
 import { Wordmark } from "./Wordmark";
+
+const ease = [0.22, 1, 0.36, 1] as const;
 
 export function Nav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [lastPath, setLastPath] = useState(pathname);
+  const [hovered, setHovered] = useState<string | null>(null);
+  const [scrolled, setScrolled] = useState(false);
   const menuId = useId();
 
   // Close the mobile menu after navigating.
@@ -26,85 +32,150 @@ export function Nav() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const active = NAV_LINKS.find(
+    (l) => pathname === l.href || pathname.startsWith(`${l.href}/`),
+  )?.href;
+  // The underline sits under the hovered link, or the current page at rest.
+  const marked = hovered ?? active ?? null;
+
   return (
-    <header className="border-b border-rule">
+    <>
       <a
         href="#main"
-        className="meta sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:bg-paper focus:px-3 focus:py-2"
+        className="meta sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:bg-paper focus:px-3 focus:py-2"
       >
         Skip to content
       </a>
-      <Container className="flex h-16 items-center justify-between">
-        <Wordmark />
 
-        <nav aria-label="Primary" className="hidden md:block">
-          <ul className="flex items-center gap-8">
+      <div className="bg-ink text-paper">
+        <Container className="flex h-10 items-center">
+          <Link
+            href={ANNOUNCEMENT.href}
+            className="group meta flex min-w-0 items-center gap-3 text-paper/70 transition-colors hover:text-paper"
+          >
+            <span className="shrink-0 text-paper">{ANNOUNCEMENT.label}</span>
+            <span aria-hidden="true" className="h-3 w-px shrink-0 bg-paper/25" />
+            <span className="truncate normal-case tracking-normal font-sans text-[0.8125rem]">
+              {ANNOUNCEMENT.text}
+            </span>
+            <Arrow className="shrink-0" />
+          </Link>
+        </Container>
+      </div>
+
+      <header
+        className={`sticky top-0 z-40 border-b bg-paper transition-colors duration-300 ${
+          scrolled ? "border-rule" : "border-transparent"
+        }`}
+      >
+        <Container className="flex h-16 items-center justify-between">
+          <Wordmark />
+
+          <nav aria-label="Primary" className="hidden md:block">
+            <LayoutGroup id="nav">
+              <ul className="-mr-3 flex items-center gap-1" onMouseLeave={() => setHovered(null)}>
+                {NAV_LINKS.map((link) => (
+                  <li
+                    key={link.href}
+                    className="group/dd relative"
+                    onMouseEnter={() => setHovered(link.href)}
+                  >
+                    <Link
+                      href={link.href}
+                      aria-current={active === link.href ? "page" : undefined}
+                      onFocus={() => setHovered(link.href)}
+                      onBlur={() => setHovered(null)}
+                      className={`meta relative flex items-center gap-1.5 px-3 py-2 transition-colors duration-300 hover:text-ink ${
+                        active === link.href ? "text-ink" : "text-muted"
+                      }`}
+                    >
+                      {link.label}
+                      {"children" in link ? (
+                        <span
+                          aria-hidden="true"
+                          className="inline-block text-[0.6rem] transition-transform duration-300 ease-out-soft group-hover/dd:rotate-180"
+                        >
+                          ▾
+                        </span>
+                      ) : null}
+                      {marked === link.href ? (
+                        <motion.span
+                          layoutId="nav-underline"
+                          aria-hidden="true"
+                          className="absolute right-3 bottom-1 left-3 h-px bg-ink"
+                          transition={{ duration: 0.45, ease }}
+                        />
+                      ) : null}
+                    </Link>
+
+                    {"children" in link ? (
+                      <div className="invisible absolute top-full right-0 z-50 translate-y-1 pt-2 opacity-0 transition-all duration-300 ease-out-soft group-focus-within/dd:visible group-focus-within/dd:translate-y-0 group-focus-within/dd:opacity-100 group-hover/dd:visible group-hover/dd:translate-y-0 group-hover/dd:opacity-100">
+                        <ul className="w-72 overflow-hidden rounded-[6px] border border-rule bg-paper py-1">
+                          {link.children.map((child) => (
+                            <li key={child.href}>
+                              <Link
+                                href={child.href}
+                                className="row-glide group flex items-center justify-between gap-4 px-4 py-3"
+                              >
+                                <span className="flex flex-col gap-0.5">
+                                  <span className="text-[0.9375rem] tracking-[-0.01em]">
+                                    {child.label}
+                                  </span>
+                                  <span className="meta text-[0.6875rem] text-muted">{child.meta}</span>
+                                </span>
+                                <Arrow className="text-muted" />
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </LayoutGroup>
+          </nav>
+
+          <button
+            type="button"
+            className="meta -mr-2 px-2 py-2 md:hidden"
+            aria-expanded={open}
+            aria-controls={menuId}
+            onClick={() => setOpen((v) => !v)}
+          >
+            {open ? "Close" : "Menu"}
+          </button>
+        </Container>
+
+        <nav
+          id={menuId}
+          aria-label="Menu"
+          hidden={!open}
+          className="border-t border-rule md:hidden"
+        >
+          <Container as="ul" className="flex flex-col py-2">
             {NAV_LINKS.map((link) => (
-              <li key={link.href}>
-                <NavLink href={link.href} active={pathname === link.href}>
+              <li key={link.href} className="border-b border-rule last:border-0">
+                <Link
+                  href={link.href}
+                  aria-current={active === link.href ? "page" : undefined}
+                  className="group flex items-center justify-between py-4 text-2xl tracking-[-0.02em]"
+                >
                   {link.label}
-                </NavLink>
+                  <Arrow className="text-muted" />
+                </Link>
               </li>
             ))}
-          </ul>
+          </Container>
         </nav>
-
-        <button
-          type="button"
-          className="meta -mr-2 px-2 py-2 md:hidden"
-          aria-expanded={open}
-          aria-controls={menuId}
-          onClick={() => setOpen((v) => !v)}
-        >
-          {open ? "Close" : "Menu"}
-        </button>
-      </Container>
-
-      <nav
-        id={menuId}
-        aria-label="Menu"
-        hidden={!open}
-        className="border-t border-rule md:hidden"
-      >
-        <Container as="ul" className="flex flex-col py-2">
-          {NAV_LINKS.map((link) => (
-            <li key={link.href} className="border-b border-rule last:border-0">
-              <Link
-                href={link.href}
-                aria-current={pathname === link.href ? "page" : undefined}
-                className="flex items-center justify-between py-4 text-2xl tracking-[-0.02em]"
-              >
-                {link.label}
-                <span aria-hidden="true" className="text-muted">
-                  →
-                </span>
-              </Link>
-            </li>
-          ))}
-        </Container>
-      </nav>
-    </header>
-  );
-}
-
-function NavLink({
-  href,
-  active,
-  children,
-}: {
-  href: string;
-  active: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      aria-current={active ? "page" : undefined}
-      className={`meta transition-colors hover:text-ink ${
-        active ? "text-ink" : "text-muted"
-      }`}
-    >
-      {children}
-    </Link>
+      </header>
+    </>
   );
 }

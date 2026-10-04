@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
+import { useState } from "react";
 import { formatTime } from "@/lib/speech";
 import { useMockPlayback } from "@/lib/useMockPlayback";
 
@@ -23,6 +24,8 @@ type WaveformPlayerProps = {
   align?: "center" | "bottom";
   /** Dashed line at full height, e.g. the fixed step budget. */
   ceiling?: boolean;
+  /** Hover readout for one bar, e.g. "Frame 041 · 14 steps · delayed". */
+  describe?: (index: number) => string;
   className?: string;
 } & (Controlled | Partial<Record<keyof Controlled, undefined>>);
 
@@ -43,8 +46,10 @@ export function WaveformPlayer(props: WaveformPlayerProps) {
     meta,
     align = "center",
     ceiling = false,
+    describe,
     className = "",
   } = props;
+  const [hover, setHover] = useState<number | null>(null);
   const internal = useMockPlayback(duration);
   const progress = props.progress ?? internal.progress;
   const playing = props.playing ?? internal.playing;
@@ -54,10 +59,24 @@ export function WaveformPlayer(props: WaveformPlayerProps) {
 
   const playedBars = progress * bars.length;
 
+  const onPointerMove = describe
+    ? (e: React.PointerEvent<HTMLDivElement>) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width;
+        setHover(Math.min(bars.length - 1, Math.max(0, Math.floor(x * bars.length))));
+      }
+    : undefined;
+
   return (
     <div className={`flex flex-col gap-3 ${className}`}>
       <div className="meta flex items-baseline justify-between gap-4 opacity-70">
-        <span className="min-w-0">{meta?.join(" · ")}</span>
+        <span className="min-w-0 truncate">
+          {hover !== null && describe ? (
+            <span className="text-current">{describe(hover)}</span>
+          ) : (
+            meta?.join(" · ")
+          )}
+        </span>
         <span className="shrink-0 tabular-nums">
           {formatTime(progress * duration)} / {formatTime(duration)}
         </span>
@@ -68,12 +87,16 @@ export function WaveformPlayer(props: WaveformPlayerProps) {
           type="button"
           onClick={onToggle}
           aria-label={`${playing ? "Pause" : "Play"} ${label}`}
-          className="grid size-11 shrink-0 place-items-center rounded-[6px] border border-current/30 transition-colors hover:border-current"
+          className="grid size-11 shrink-0 place-items-center rounded-[6px] border border-current/30 transition-[border-color,background-color,transform] duration-300 ease-out-soft hover:border-current hover:bg-current/[0.06] active:scale-95"
         >
           {playing ? <PauseGlyph /> : <PlayGlyph />}
         </button>
 
-        <div className="relative h-12 flex-1 rounded-[2px] has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-4 has-[:focus-visible]:outline-current">
+        <div
+          className="relative h-12 flex-1 rounded-[2px] has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-4 has-[:focus-visible]:outline-current"
+          onPointerMove={onPointerMove}
+          onPointerLeave={describe ? () => setHover(null) : undefined}
+        >
           <svg
             viewBox={`0 0 ${bars.length * BAR_PITCH} ${HEIGHT}`}
             preserveAspectRatio="none"
@@ -99,7 +122,11 @@ export function WaveformPlayer(props: WaveformPlayerProps) {
                       ? { duration: 0 }
                       : { duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: i * 0.003 }
                   }
-                  opacity={(i < playedBars ? 1 : 0.3) * (h < 0.1 ? 0.5 : 1)}
+                  opacity={
+                    hover === i
+                      ? 1
+                      : (i < playedBars ? 1 : 0.3) * (h < 0.1 ? 0.5 : 1)
+                  }
                 />
               );
             })}
@@ -117,6 +144,13 @@ export function WaveformPlayer(props: WaveformPlayerProps) {
               />
             ) : null}
           </svg>
+          {hover !== null ? (
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute -top-1 -bottom-1 w-px bg-current/50"
+              style={{ left: `${((hover + 0.5) / bars.length) * 100}%` }}
+            />
+          ) : null}
           {onSeek ? (
             <input
               type="range"

@@ -1,4 +1,5 @@
 // All placeholder content. Replace with real data when it exists.
+// Bylines are group names until the team is public.
 
 export const DEMO_SENTENCE =
   "Your train to Leeds is delayed by twelve minutes, and will now depart from platform four.";
@@ -20,10 +21,41 @@ export const STEP_BUDGET = {
 } as const;
 
 export const METRICS = [
-  { value: STEP_BUDGET.speedup.toFixed(1), unit: "×", label: "Wall-clock speedup" },
-  { value: STEP_BUDGET.adaptiveMean.toFixed(1), unit: `/${STEP_BUDGET.fixed}`, label: "Mean steps / frame" },
-  { value: "−0.04", unit: "", label: "MOS vs. full steps" },
+  {
+    value: STEP_BUDGET.speedup,
+    decimals: 1,
+    unit: "×",
+    label: "Wall-clock speedup",
+    detail: "300 ms → 96 ms median per utterance, single GPU, predictor included",
+  },
+  {
+    value: STEP_BUDGET.adaptiveMean,
+    decimals: 1,
+    unit: `/${STEP_BUDGET.fixed}`,
+    label: "Mean steps / frame",
+    detail: `${Math.round((1 - STEP_BUDGET.adaptiveMean / STEP_BUDGET.fixed) * 100)}% of refinement steps never run. Range 2–32 per frame`,
+  },
+  {
+    value: -0.04,
+    decimals: 2,
+    unit: "",
+    label: "MOS vs. full steps",
+    detail: "4.27 vs. 4.31, inside the ±0.06 interval. 40 listeners × 120 utterances",
+  },
 ];
+
+export type LeaderboardDetail = {
+  /** One-sentence read of the row, shown first when expanded. */
+  summary: string;
+  /** Per-frame step distribution: min, median, p95, max. */
+  stepDist: [number, number, number, number];
+  mosCi: string;
+  /** WER by text domain. */
+  werByDomain: { domain: string; value: number }[];
+  latencyP95: string;
+  rtf: string;
+  extraCost: string;
+};
 
 export type LeaderboardRow = {
   /** null marks the unranked full-step reference row. */
@@ -35,18 +67,230 @@ export type LeaderboardRow = {
   wer: string;
   latency: string;
   speedup: string;
+  detail: LeaderboardDetail;
 };
+
+/** Median utterance length in the test set, used for real-time factor. */
+export const MEDIAN_UTTERANCE_S = 5.6;
+const rtf = (ms: number) => (ms / 1000 / MEDIAN_UTTERANCE_S).toFixed(3);
+
+export const WER_DOMAINS = ["Read speech", "Conversational", "Numbers & names"] as const;
+const wer = (a: number, b: number, c: number) =>
+  WER_DOMAINS.map((domain, i) => ({ domain, value: [a, b, c][i] }));
 
 // Ranked by MOS among accelerated methods. Speedup = 300 ms / latency.
 export const LEADERBOARD: LeaderboardRow[] = [
-  { rank: 1, method: "Adaptive TTS", note: "Ours · per-frame", steps: STEP_BUDGET.adaptiveMean.toFixed(1), mos: "4.27", wer: "2.9%", latency: "96 ms", speedup: `${STEP_BUDGET.speedup.toFixed(1)}×` },
-  { rank: 2, method: "Step distillation", note: "Baseline", steps: "8", mos: "4.10", wer: "3.3%", latency: "92 ms", speedup: "3.3×" },
-  { rank: 3, method: "Uniform reduction", note: "Baseline", steps: "8", mos: "3.86", wer: "4.4%", latency: "92 ms", speedup: "3.3×" },
-  { rank: null, method: "Full steps", note: "Reference", steps: String(STEP_BUDGET.fixed), mos: "4.31", wer: "2.8%", latency: "300 ms", speedup: "1.0×" },
+  {
+    rank: 1,
+    method: "Adaptive TTS",
+    note: "Ours · per-frame",
+    steps: STEP_BUDGET.adaptiveMean.toFixed(1),
+    mos: "4.27",
+    wer: "2.9%",
+    latency: "96 ms",
+    speedup: `${STEP_BUDGET.speedup.toFixed(1)}×`,
+    detail: {
+      summary:
+        "Within the confidence interval of full steps on MOS, at a third of the latency. Most of the remaining gap is on numbers and names, where the predictor occasionally under-spends.",
+      stepDist: [2, 6, 22, 32],
+      mosCi: "± 0.06",
+      werByDomain: wer(2.1, 3.4, 3.9),
+      latencyP95: "131 ms",
+      rtf: rtf(96),
+      extraCost: "Predictor: 1.2M params, ~6 GPU-h to train, 1.8 ms per utterance",
+    },
+  },
+  {
+    rank: 2,
+    method: "Step distillation",
+    note: "Baseline",
+    steps: "8",
+    mos: "4.10",
+    wer: "3.3%",
+    latency: "92 ms",
+    speedup: "3.3×",
+    detail: {
+      summary:
+        "Slightly faster than adaptive because it skips the predictor, but every frame gets 8 steps, so hard onsets lose detail and easy silence still pays full price.",
+      stepDist: [8, 8, 8, 8],
+      mosCi: "± 0.07",
+      werByDomain: wer(2.4, 3.9, 4.6),
+      latencyP95: "104 ms",
+      rtf: rtf(92),
+      extraCost: "Student retraining: ~1,200 GPU-h, one model per step count",
+    },
+  },
+  {
+    rank: 3,
+    method: "Uniform reduction",
+    note: "Baseline",
+    steps: "8",
+    mos: "3.86",
+    wer: "4.4%",
+    latency: "92 ms",
+    speedup: "3.3×",
+    detail: {
+      summary:
+        "The naive cut: same model, a quarter of the steps everywhere. Listeners most often flag buzzy fricatives and smeared plosives.",
+      stepDist: [8, 8, 8, 8],
+      mosCi: "± 0.08",
+      werByDomain: wer(3.1, 5.0, 6.2),
+      latencyP95: "103 ms",
+      rtf: rtf(92),
+      extraCost: "None. No training, no extra parameters",
+    },
+  },
+  {
+    rank: null,
+    method: "Full steps",
+    note: "Reference",
+    steps: String(STEP_BUDGET.fixed),
+    mos: "4.31",
+    wer: "2.8%",
+    latency: "300 ms",
+    speedup: "1.0×",
+    detail: {
+      summary:
+        "The unmodified base model. It sets the quality ceiling every other row is measured against, and the latency floor we are trying to beat.",
+      stepDist: [32, 32, 32, 32],
+      mosCi: "± 0.05",
+      werByDomain: wer(2.0, 3.2, 3.8),
+      latencyP95: "322 ms",
+      rtf: rtf(300),
+      extraCost: "None",
+    },
+  },
 ];
+
+// ------------------------------------------------------------------
+// Analysis: the expandable findings on the home and benchmarks pages.
+// ------------------------------------------------------------------
+
+/**
+ * Where the adaptive predictor spends steps, by acoustic segment class.
+ * `frames` is the share of frames; `steps` is mean steps per frame.
+ * Weighted mean comes out at STEP_BUDGET.adaptiveMean (7.8).
+ */
+export const SEGMENT_CLASSES = [
+  { name: "Silence & pauses", frames: 0.24, steps: 2.4 },
+  { name: "Vowels & sonorants", frames: 0.41, steps: 6.6 },
+  { name: "Fricatives", frames: 0.15, steps: 9.6 },
+  { name: "Word-initial transitions", frames: 0.11, steps: 13.4 },
+  { name: "Plosive bursts", frames: 0.09, steps: 17.8 },
+] as const;
+
+/** Speedup shrinks with batch size: a batch waits for its hardest frame. */
+export const BATCH_SPEEDUP = [
+  { batch: 1, speedup: STEP_BUDGET.speedup },
+  { batch: 4, speedup: 2.8 },
+  { batch: 16, speedup: 2.2 },
+  { batch: 64, speedup: 1.6 },
+] as const;
+
+/** Blind A/B preference, 40 listeners × 120 pairs per comparison. */
+export const PREFERENCE = [
+  { versus: "Full steps", ours: 31, tie: 41, theirs: 28 },
+  { versus: "Step distillation", ours: 52, tie: 27, theirs: 21 },
+  { versus: "Uniform reduction", ours: 68, tie: 19, theirs: 13 },
+] as const;
+
+/** Predictor behaviour on the held-out set. */
+export const PREDICTOR_STATS = [
+  { label: "Frames under-predicted", value: "3.1%", note: "Predicted fewer steps than an oracle needed for < 0.05 dB loss" },
+  { label: "Frames over-predicted", value: "11.4%", note: "Spent more than needed. Costs time, not quality" },
+  { label: "Predictor overhead", value: "1.8 ms", note: "Per utterance, included in every latency figure" },
+  { label: "Parameters", value: "1.2M", note: "Under 0.5% of the base model" },
+] as const;
+
+/** Where adaptive still loses to full steps. MOS delta vs. full steps. */
+export const FAILURE_CASES = [
+  { case: "Whispered speech", delta: -0.21, why: "Noise-like spectra look easy to the predictor but need many steps" },
+  { case: "Laughter & non-speech", delta: -0.17, why: "Rare in training data; predictor confidence is poorly calibrated" },
+  { case: "Code-switching", delta: -0.12, why: "Language boundaries create onsets the text encoder does not flag" },
+  { case: "Long numerals", delta: -0.09, why: "Dense plosive runs; the cap of 32 steps is hit back-to-back" },
+] as const;
+
+export type Finding = {
+  id: string;
+  label: string;
+  title: string;
+  /** Visible when collapsed. */
+  takeaway: string;
+  /** Headline number on the right of the row. */
+  stat: string;
+  statLabel: string;
+};
+
+export const FINDINGS: Finding[] = [
+  {
+    id: "segments",
+    label: "Allocation",
+    title: "Where the steps go",
+    takeaway: "Plosive bursts take 7.4× the steps of silence, and silence is a quarter of all frames.",
+    stat: "7.4×",
+    statLabel: "Burst vs. silence",
+  },
+  {
+    id: "preference",
+    label: "Listening test",
+    title: "What listeners prefer",
+    takeaway: "Against full steps, most listeners hear no difference. Against both baselines, adaptive wins outright.",
+    stat: "41%",
+    statLabel: "No preference vs. full",
+  },
+  {
+    id: "batching",
+    label: "Systems",
+    title: "Speedup under batching",
+    takeaway: "A batch is only as fast as its hardest frame, so the speedup narrows as batches grow.",
+    stat: "1.6×",
+    statLabel: "At batch 64",
+  },
+  {
+    id: "predictor",
+    label: "Predictor",
+    title: "How often the predictor is wrong",
+    takeaway: "It errs toward spending too much. Under-prediction, the error that costs quality, is rare.",
+    stat: "3.1%",
+    statLabel: "Under-predicted",
+  },
+  {
+    id: "failures",
+    label: "Limits",
+    title: "Where adaptive still loses",
+    takeaway: "Whispers, laughter and code-switching fool the predictor. These are the open problems.",
+    stat: "−0.21",
+    statLabel: "Worst MOS gap",
+  },
+];
+
+/** Evaluation sets. Shown as a credibility strip, Andon-style. */
+export const EVAL_SETS = [
+  { name: "LibriTTS-R", detail: "Read speech · test-clean" },
+  { name: "VCTK", detail: "108 speakers · accents" },
+  { name: "Expresso", detail: "Conversational · expressive" },
+  { name: "Numerals-1k", detail: "In-house · numbers & names" },
+] as const;
+
+/** Inference pipeline for the field-note diagram. */
+export const PIPELINE = [
+  { id: "text", tag: "Unchanged", label: "Text encoder", meta: "Phonemes → hidden states", detail: "Unchanged from the base model. Its hidden states are what the step predictor reads." },
+  { id: "predictor", tag: "New", label: "Step predictor", meta: "1.2M params · 1.8 ms", detail: "A small convolutional head that outputs a step count per frame, from 2 to 32, before any refinement runs." },
+  { id: "scheduler", tag: "New", label: "Scheduler", meta: "Groups frames by budget", detail: "Packs frames with similar step counts so the GPU isn’t idling on frames that already finished." },
+  { id: "refine", tag: "Modified", label: "Refinement loop", meta: "Triton kernel · 2–32 steps", detail: "The base model’s denoiser, run with a per-frame stop mask. Finished frames drop out of the batch." },
+  { id: "vocoder", tag: "Unchanged", label: "Vocoder", meta: "Mel → 24 kHz audio", detail: "Unchanged. Adaptive inference ends before audio is synthesised." },
+] as const;
+
+/** Open roles for the Join section. */
+export const ROLES = [
+  { title: "Research engineer, inference systems", meta: "Triton · CUDA · profiling", place: "Remote or London" },
+  { title: "Research scientist, speech evaluation", meta: "Listening tests · psychoacoustics", place: "Remote" },
+] as const;
 
 export type Post = {
   category: string;
+  /** Group byline. */
+  authors: string;
   date: string;
   readTime: string;
   title: string;
@@ -56,6 +300,7 @@ export type Post = {
 export const POSTS: Post[] = [
   {
     category: "Systems",
+    authors: "Systems group",
     date: "Sep 18, 2026",
     readTime: "9 min",
     title: "From fewer steps to faster wall-clock",
@@ -64,6 +309,7 @@ export const POSTS: Post[] = [
   },
   {
     category: "Method",
+    authors: "Modeling group",
     date: "Aug 27, 2026",
     readTime: "7 min",
     title: "Predicting step counts per frame",
@@ -72,6 +318,7 @@ export const POSTS: Post[] = [
   },
   {
     category: "Analysis",
+    authors: "Modeling group",
     date: "Jul 30, 2026",
     readTime: "11 min",
     title: "Not every frame is equally hard",
@@ -80,6 +327,7 @@ export const POSTS: Post[] = [
   },
   {
     category: "Evaluation",
+    authors: "Evaluation group",
     date: "Jun 12, 2026",
     readTime: "6 min",
     title: "Benchmarking step reduction fairly",
@@ -87,3 +335,37 @@ export const POSTS: Post[] = [
       "Comparing adaptive inference with distillation and uniform step cuts at matched quality, not just matched speed.",
   },
 ];
+
+/** How every number on the site is produced. Benchmarks page, #method. */
+export const METHOD = [
+  {
+    label: "Test set",
+    summary: "1,200 utterances across four evaluation sets, median 5.6 s.",
+    detail:
+      "LibriTTS-R test-clean, VCTK, Expresso and an in-house numbers-and-names set, sampled to 300 utterances each. No utterance appears in predictor training data.",
+  },
+  {
+    label: "Listening test",
+    summary: "MOS and blind A/B preference, 40 listeners.",
+    detail:
+      "Listeners rate 120 utterances per method on a 5-point scale, in randomised order with hidden references and attention checks. Intervals are 95% bootstrap over listeners and utterances.",
+  },
+  {
+    label: "Intelligibility",
+    summary: "WER from an off-the-shelf ASR model, split by text domain.",
+    detail:
+      "The same ASR model and text normaliser for every method, so differences come from the audio, not the transcript pipeline. Numbers and names are scored after normalisation.",
+  },
+  {
+    label: "Latency",
+    summary: "Wall-clock per utterance, one GPU, predictor included.",
+    detail:
+      "Median and p95 over the full test set after 50 warm-up runs, from text in to mel out. The vocoder is excluded because it is identical for every method.",
+  },
+  {
+    label: "Baselines",
+    summary: "Same base model and weights for every row.",
+    detail:
+      "Uniform reduction runs the base model at 8 steps. Step distillation trains an 8-step student from the same teacher. The full-step model is the unmodified 32-step reference.",
+  },
+] as const;

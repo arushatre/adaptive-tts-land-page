@@ -2,22 +2,29 @@
 
 /* ------------------------------------------------------------------
    Adaptive TTS design tokens (source of truth: CLAUDE.md)
-   Accent: pale green. Never introduce the pale blue alternative.
+   Canvas is a toned-down warm stone; the single accent is a neutral
+   "bone" used for highlights only (selection, the leading row, the
+   spoken word). No saturated colour anywhere.
 ------------------------------------------------------------------ */
 @theme {
   /* Color: light canvas (default) */
-  --color-paper: #f4f2ec;
-  --color-ink: #101316;
-  --color-muted: #5e656b;
-  --color-rule: #d8d6cf;
-  --color-paper-hover: #eceae4; /* row hover: paper + ~3% ink */
-  --color-accent: #b8f5d4;
+  --color-paper: #e7e4dc;
+  --color-ink: #15181b;
+  --color-muted: #565c61;
+  --color-rule: #cdc8bd;
+  --color-paper-hover: #dfdbd2; /* row hover */
+  --color-sunk: #e0dcd3; /* expanded detail panels */
+  --color-accent: #d2cab9; /* neutral highlight: selection, top row */
+  --color-accent-strong: #8c826f; /* data marks that need contrast */
 
   /* Color: dark band (Proximal-style), used for exactly one section */
-  --color-night: #0a0a0a;
-  --color-night-ink: #ececec;
-  --color-night-muted: #8b9196;
-  --color-night-rule: #26292c;
+  --color-night: #111214;
+  --color-night-raised: #17181b;
+  --color-night-ink: #e4e2dc;
+  --color-night-muted: #8a8d90;
+  --color-night-rule: #27292c;
+  --color-night-mark: #34312c; /* spoken-word marker on the dark band */
+  --color-night-accent: #c9bfab;
 
   /* Type families (wired from next/font in app/layout.tsx) */
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
@@ -69,6 +76,7 @@
     background: var(--color-paper);
     color: var(--color-ink);
     -webkit-text-size-adjust: 100%;
+    scroll-padding-top: 5rem; /* clears the sticky nav on anchor jumps */
   }
 
   @media (prefers-reduced-motion: no-preference) {
@@ -89,6 +97,11 @@
   ::selection {
     background: var(--color-accent);
     color: var(--color-ink);
+  }
+
+  .bg-night ::selection {
+    background: var(--color-night-mark);
+    color: var(--color-night-ink);
   }
 
   :focus-visible {
@@ -130,5 +143,46 @@
   padding-block: 6rem; /* 96 */
   @media (width >= 64rem) {
     padding-block: 9rem; /* 144 */
+  }
+}
+
+/* Hover "glide": a fill that sweeps in from the left behind a row.
+   Pair with `group` on the same element for child transitions. */
+@utility row-glide {
+  position: relative;
+  isolation: isolate;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--color-paper-hover);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 550ms var(--ease-out-soft);
+  }
+  &:hover::before,
+  &:focus-visible::before {
+    transform: scaleX(1);
+  }
+}
+
+/* The same sweep on the dark band. */
+@utility row-glide-night {
+  position: relative;
+  isolation: isolate;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--color-night-raised);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 550ms var(--ease-out-soft);
+  }
+  &:hover::before,
+  &:focus-visible::before {
+    transform: scaleX(1);
   }
 }

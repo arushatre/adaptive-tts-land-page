@@ -1,24 +1,49 @@
-import { ArrowLink } from "../ArrowLink";
+import { ROLES } from "@/lib/content";
+import { CONTACT_EMAIL } from "@/lib/site";
+import { Arrow, ArrowLink } from "../ArrowLink";
 import { Container } from "../Container";
 import { MetaLabel } from "../MetaLabel";
+import { Reveal } from "../Reveal";
 
 export function GetInvolved() {
   return (
     <section aria-labelledby="involved-title" className="pb-24 lg:pb-36">
-      <Container>
-        <div>
-          <MetaLabel>Get involved</MetaLabel>
+      <Container className="grid gap-12 lg:grid-cols-12 lg:gap-6">
+        <Reveal className="lg:col-span-6">
+          <MetaLabel>Join the lab</MetaLabel>
           <h2
             id="involved-title"
-            className="mt-6 max-w-[30ch] text-lede font-normal text-balance"
+            className="mt-6 max-w-[26ch] text-lede font-normal text-balance"
           >
             Adaptive TTS is heading toward an open-source inference engine and a
             paper submission, and we&rsquo;re looking for collaborators and
             early testers along the way.
           </h2>
-          <ArrowLink href="#" className="mt-10">
-            Request early access
+          <ArrowLink href={`mailto:${CONTACT_EMAIL}`} className="mt-10">
+            Write to the lab
           </ArrowLink>
+        </Reveal>
+
+        <div className="lg:col-span-5 lg:col-start-8 lg:self-end">
+          <MetaLabel className="mb-4 block">Open roles · {ROLES.length}</MetaLabel>
+          <ul className="border-t border-ink">
+            {ROLES.map((role) => (
+              <li key={role.title} className="border-b border-rule">
+                <a
+                  href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(role.title)}`}
+                  className="row-glide group flex items-start justify-between gap-6 py-5"
+                >
+                  <span className="flex flex-col gap-1.5 transition-transform duration-500 ease-out-soft group-hover:translate-x-3">
+                    <span className="text-[1.0625rem] tracking-[-0.01em]">{role.title}</span>
+                    <span className="meta text-[0.6875rem] text-muted">
+                      {role.meta} · {role.place}
+                    </span>
+                  </span>
+                  <Arrow className="mt-1 pr-3 text-muted group-hover:text-ink" />
+                </a>
+              </li>
+            ))}
+          </ul>
         </div>
       </Container>
     </section>

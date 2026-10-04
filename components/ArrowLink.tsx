@@ -20,8 +20,8 @@ export function ArrowLink({
     </>
   );
 
-  // In-page anchors and placeholders don't need client routing.
-  if (href.startsWith("#")) {
+  // Anchors, placeholders and mailto links don't need client routing.
+  if (!href.startsWith("/")) {
     return (
       <a href={href} className={classes} {...props}>
         {inner}

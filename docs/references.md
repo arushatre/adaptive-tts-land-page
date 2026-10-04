@@ -49,3 +49,16 @@ Pulled from Mobbin on 2026-10-02. These are for layout and pattern only. Nothing
 2. The demo as one framed band, with the sentence as the hero object and options as labelled rows (ElevenLabs, flattened).
 3. A boxless table with mono numbers, a muted rank, one highlighted row and a method note (Contra, Mistral).
 4. Index rows with a mono metadata rail on the left and content on the right, where the whole row links (OpenAI, Wellfound).
+
+## Round 2: detail and disclosure (2026-10-04)
+
+**Superhuman: plan comparison accordion** · https://mobbin.com/sites/sections/3604d03f-77d9-4de5-adb4-96524850e7fe
+- Borrow: a table row that expands in place into a panel of sub-rows, with only a thin chevron as the control. This became the expandable leaderboard rows.
+
+**Lightship: "All specifications" accordion** · https://mobbin.com/sites/sections/e86b17db-e10c-4ecf-af91-d1e36eff40c3
+- Borrow: plain ruled rows with a `+` at the far right and a quiet tinted panel when open. Used for the findings and the method notes.
+
+**IntegratedBio: publications list** · https://mobbin.com/sites/sections/593eb726-d6e4-4872-a1d5-51fb4d4a9893
+- Borrow: mono dates beside titles, with the row as the hit target. Skip: the green arrow buttons. Ours is a fill that sweeps in behind the row.
+
+**Andon Labs (site, not Mobbin)**: announcement bar above the nav, nav dropdowns, an "evaluated on" credibility strip, "Join the Lab" with open roles. We took the structure and kept our tokens.

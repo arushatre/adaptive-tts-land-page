@@ -157,3 +157,40 @@ export function formatTime(seconds: number) {
   const rest = (s % 60).toFixed(1).padStart(4, "0");
   return `${m}:${rest}`;
 }
+
+/** Word under frame `i`, or null in a pause. */
+export function wordAtFrame(timeline: Timeline, frames: number, i: number) {
+  const x = frameCenter(i, frames);
+  const w = timeline.spans.findIndex(([a, b]) => x >= a && x <= b);
+  return w === -1 ? null : timeline.words[w].replace(/[^A-Za-z0-9'’-]/g, "");
+}
+
+/** Hover readout for one frame: "Frame 041 · 14 steps · delayed". */
+export function describeFrame(timeline: Timeline, steps: number[], i: number) {
+  const word = wordAtFrame(timeline, steps.length, i);
+  const n = steps[i];
+  return `Frame ${String(i + 1).padStart(3, "0")} · ${n} step${n === 1 ? "" : "s"} · ${word ?? "pause"}`;
+}
+
+/** Steps spent inside each word (total and per frame), in reading order. */
+export function stepsPerWord(timeline: Timeline, steps: number[]) {
+  const frames = steps.length;
+  return timeline.words.map((word, w) => {
+    const [a, b] = timeline.spans[w];
+    let sum = 0;
+    let count = 0;
+    for (let i = 0; i < frames; i++) {
+      const x = frameCenter(i, frames);
+      if (x >= a && x <= b) {
+        sum += steps[i];
+        count++;
+      }
+    }
+    return {
+      word: word.replace(/[^A-Za-z0-9'’-]/g, ""),
+      total: sum,
+      mean: count ? sum / count : 0,
+      frames: count,
+    };
+  });
+}
