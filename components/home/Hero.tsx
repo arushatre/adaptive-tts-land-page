@@ -2,8 +2,6 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import { Fragment } from "react";
-import { PREDICTOR, STEP_BUDGET } from "@/lib/content";
-import { MODEL_STATUS } from "@/lib/site";
 import { ArrowLink, PrimaryLink } from "../ArrowLink";
 import { Container } from "../Container";
 import { Kicker } from "../Kicker";
@@ -12,13 +10,6 @@ import { StepMask } from "./StepMask";
 
 const HEADLINE = "Some syllables are harder than others.";
 const ease = [0.22, 1, 0.36, 1] as const;
-
-const SPEC = [
-  { label: "Base model", value: `${STEP_BUDGET.fixed}-step iterative TTS` },
-  { label: "Predictor", value: `${PREDICTOR.params} params · ${PREDICTOR.overheadMs} ms` },
-  { label: "Hardware", value: "Single GPU, batch 1" },
-  { label: "Status", value: `${MODEL_STATUS.model} · eval ${MODEL_STATUS.lastEval}` },
-];
 
 export function Hero() {
   const words = HEADLINE.split(" ");
@@ -87,18 +78,6 @@ export function Hero() {
               <PrimaryLink href="#demo">Hear the difference</PrimaryLink>
               <ArrowLink href="#architecture">See the architecture</ArrowLink>
             </div>
-
-            <dl className="w-full border-t border-rule">
-              {SPEC.map((row) => (
-                <div
-                  key={row.label}
-                  className="grid grid-cols-[8rem_1fr] gap-4 border-b border-rule py-3"
-                >
-                  <dt className="meta pt-px text-muted">{row.label}</dt>
-                  <dd className="text-[0.9375rem]">{row.value}</dd>
-                </div>
-              ))}
-            </dl>
           </motion.div>
 
           <motion.div
