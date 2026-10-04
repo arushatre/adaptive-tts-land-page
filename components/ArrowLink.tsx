@@ -35,24 +35,19 @@ export function ArrowLink({
   );
 }
 
-/**
- * The one primary action per section: an ink block with the arrow in an
- * accent cell. `tone="night"` inverts it for the dark bands.
- */
-export function PrimaryLink({
-  href,
-  children,
-  tone = "paper",
-  className = "",
-  ...props
-}: ArrowLinkProps & { tone?: "paper" | "night" }) {
+type Tone = "paper" | "night";
+
+const primaryClasses = (tone: Tone, className: string) => {
   const block =
     tone === "night"
       ? "bg-night-ink text-night hover:bg-night-ink/90"
       : "bg-ink text-paper hover:bg-ink/90";
+  return `group inline-flex items-stretch text-[0.9375rem] tracking-[-0.01em] transition-colors duration-200 ${block} ${className}`;
+};
+
+function PrimaryInner({ tone, children }: { tone: Tone; children: React.ReactNode }) {
   const cell = tone === "night" ? "bg-night-accent text-night" : "bg-accent text-ink";
-  const classes = `group inline-flex items-stretch text-[0.9375rem] tracking-[-0.01em] transition-colors duration-200 ${block} ${className}`;
-  const inner = (
+  return (
     <>
       <span className="px-5 py-3.5">{children}</span>
       <span
@@ -65,6 +60,21 @@ export function PrimaryLink({
       </span>
     </>
   );
+}
+
+/**
+ * The one primary action per section: an ink block with the arrow in an
+ * accent cell. `tone="night"` inverts it for the dark bands.
+ */
+export function PrimaryLink({
+  href,
+  children,
+  tone = "paper",
+  className = "",
+  ...props
+}: ArrowLinkProps & { tone?: Tone }) {
+  const classes = primaryClasses(tone, className);
+  const inner = <PrimaryInner tone={tone}>{children}</PrimaryInner>;
 
   if (!href.startsWith("/")) {
     return (
@@ -77,6 +87,23 @@ export function PrimaryLink({
     <Link href={href} className={classes} {...props}>
       {inner}
     </Link>
+  );
+}
+
+/** PrimaryLink's look on a <button>, for form submits. */
+export function PrimaryButton({
+  children,
+  tone = "paper",
+  className = "",
+  ...props
+}: ComponentPropsWithoutRef<"button"> & { tone?: Tone }) {
+  return (
+    <button
+      className={`cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${primaryClasses(tone, className)}`}
+      {...props}
+    >
+      <PrimaryInner tone={tone}>{children}</PrimaryInner>
+    </button>
   );
 }
 

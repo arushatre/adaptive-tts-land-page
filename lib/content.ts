@@ -296,10 +296,62 @@ export const PIPELINE = [
   { id: "vocoder", tag: "Unchanged", label: "Vocoder", meta: "Mel → 24 kHz audio", detail: "Unchanged. Adaptive inference ends before audio is synthesised." },
 ] as const;
 
-/** Open roles for the Join section. */
-export const ROLES = [
-  { title: "Research engineer, inference systems", meta: "Triton · CUDA · profiling", place: "Remote or London" },
-  { title: "Research scientist, speech evaluation", meta: "Listening tests · psychoacoustics", place: "Remote" },
+export type TeamMember = {
+  name: string;
+  role: string;
+  /** Mono line under the role. */
+  focus: string;
+  bio: string;
+  /** Path under /public, e.g. "/team/jane.jpg". Leave out for a placeholder frame. */
+  photo?: string;
+};
+
+/** About us. Every entry is a placeholder until the team is public. */
+export const TEAM: TeamMember[] = [
+  {
+    name: "Team member",
+    role: "Research lead",
+    focus: "Modeling · step prediction",
+    bio: "Leads the step predictor and the training recipe behind it, and spends most days deciding what makes a frame hard. Placeholder bio: replace with background, prior work and a line about life outside the lab.",
+  },
+  {
+    name: "Team member",
+    role: "Systems engineer",
+    focus: "Triton · GPU scheduling",
+    bio: "Turns skipped steps into real milliseconds: kernels, batching and the scheduler that keeps the GPU busy. Placeholder bio: replace with background, prior work and a line about life outside the lab.",
+  },
+  {
+    name: "Team member",
+    role: "Evaluation lead",
+    focus: "Listening tests · metrics",
+    bio: "Runs the listening tests and owns the method behind every number on this site. Placeholder bio: replace with background, prior work and a line about life outside the lab.",
+  },
+  {
+    name: "Team member",
+    role: "Research engineer",
+    focus: "Data · infrastructure",
+    bio: "Builds the data pipeline, the evaluation sets and the tooling that makes experiments repeatable. Placeholder bio: replace with background, prior work and a line about life outside the lab.",
+  },
+];
+
+/** How the lab works. About us page. */
+export const COMMITMENTS = [
+  {
+    title: "Every number traces to a method",
+    body: "Each figure on this site comes from a documented measurement. If one doesn’t, it’s a bug and we fix it.",
+  },
+  {
+    title: "Listeners before metrics",
+    body: "A speedup only counts if people can’t hear the cost. Human listening tests gate every result we publish.",
+  },
+  {
+    title: "Negative results get written up",
+    body: "We publish what didn’t work, including the cases where adaptive inference still loses to full steps.",
+  },
+  {
+    title: "Open by default",
+    body: "Code, evaluation sets and the inference engine will be released alongside the paper.",
+  },
 ] as const;
 
 export type Post = {

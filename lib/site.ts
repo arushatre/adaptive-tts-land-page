@@ -10,7 +10,7 @@ export const NAV_LINKS = [
       { href: "/benchmarks#method", label: "Method", meta: "How every number is measured" },
     ],
   },
-  { href: "/about", label: "About" },
+  { href: "/about", label: "About us" },
 ] as const;
 
 export const CONTACT_EMAIL = "hello@adaptive-tts.example";

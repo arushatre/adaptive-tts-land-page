@@ -3,7 +3,7 @@ import { Container } from "@/components/Container";
 import { Findings } from "@/components/Findings";
 import { AdaptiveDemo } from "@/components/home/AdaptiveDemo";
 import { ArchitectureBreakdown } from "@/components/home/ArchitectureBreakdown";
-import { GetInvolved } from "@/components/home/GetInvolved";
+import { FeedbackBox } from "@/components/home/FeedbackBox";
 import { Hero } from "@/components/home/Hero";
 import { MetricsStrip } from "@/components/home/MetricsStrip";
 import { Leaderboard } from "@/components/Leaderboard";
@@ -68,7 +68,7 @@ export default function Home() {
         </Container>
       </Section>
 
-      <GetInvolved index={6} />
+      <FeedbackBox index={6} />
     </>
   );
 }
