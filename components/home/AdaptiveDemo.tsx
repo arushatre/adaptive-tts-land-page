@@ -17,6 +17,7 @@ import {
 import { useMockPlayback } from "@/lib/useMockPlayback";
 import { Container } from "../Container";
 import { Disclosure, PlusMinus } from "../Disclosure";
+import { Section } from "../Section";
 import { SectionHeader } from "../SectionHeader";
 import { WaveformPlayer } from "../WaveformPlayer";
 
@@ -65,7 +66,7 @@ function pauseMean(steps: number[]) {
   return count ? sum / count : 0;
 }
 
-export function AdaptiveDemo() {
+export function AdaptiveDemo({ index }: { index?: number }) {
   const [modeId, setModeId] = useState<ModeId>("adaptive");
   const mode = MODES.find((m) => m.id === modeId)!;
   const { schedule } = mode;
@@ -90,20 +91,17 @@ export function AdaptiveDemo() {
   const wordMax = most.total;
 
   return (
-    <section
-      id="demo"
-      aria-labelledby="demo-title"
-      className="section-y bg-night text-night-ink"
-    >
+    <Section tone="night" id="demo" aria-labelledby="demo-title">
       <Container>
         <SectionHeader
           id="demo-title"
+          index={index}
           label="Featured · Step budget"
           title="Same audio, a fraction of the compute."
           aside={`Each bar is one frame; its height is the refinement steps spent on it, up to the dashed ${STEP_BUDGET.fixed}-step budget. Adaptive spends ${SAVED_PCT}% fewer steps. Turning that into ${STEP_BUDGET.speedup.toFixed(1)}× wall-clock speedup is the systems half of the work.`}
         />
 
-        <div className="mt-14 overflow-hidden rounded-[6px] border border-night-rule lg:mt-20">
+        <div className="mt-12 overflow-hidden border border-night-rule bg-night lg:mt-16">
           <fieldset>
             <legend className="sr-only">Step schedule</legend>
             <LayoutGroup id="demo-mode">
@@ -130,8 +128,8 @@ export function AdaptiveDemo() {
                       <span className="meta flex items-center gap-2">
                         <span
                           aria-hidden="true"
-                          className={`size-2 rounded-[1px] transition-colors duration-300 ${
-                            selected ? "bg-night-accent" : "border border-current/50"
+                          className={`h-1.5 rounded-full transition-all duration-300 ${
+                            selected ? "w-5 bg-night-accent" : "w-1.5 border border-current/50"
                           }`}
                         />
                         {String(i + 1).padStart(2, "0")}
@@ -262,6 +260,6 @@ export function AdaptiveDemo() {
           <p>Illustrative schedule · simulated playback · hover a bar to inspect its frame</p>
         </div>
       </Container>
-    </section>
+    </Section>
   );
 }

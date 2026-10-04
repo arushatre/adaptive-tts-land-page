@@ -20,6 +20,14 @@ export const STEP_BUDGET = {
   speedup: 3.1,
 } as const;
 
+/** The step predictor's footprint, shared by the hero, metrics and architecture. */
+export const PREDICTOR = {
+  params: "1.2M",
+  /** Per utterance, included in every latency figure. */
+  overheadMs: 1.8,
+  trainGpuHours: 6,
+} as const;
+
 export const METRICS = [
   {
     value: STEP_BUDGET.speedup,
@@ -41,6 +49,13 @@ export const METRICS = [
     unit: "",
     label: "MOS vs. full steps",
     detail: "4.27 vs. 4.31, inside the ±0.06 interval. 40 listeners × 120 utterances",
+  },
+  {
+    value: PREDICTOR.overheadMs,
+    decimals: 1,
+    unit: " ms",
+    label: "Predictor overhead",
+    detail: `Per utterance, counted in every latency figure. ${PREDICTOR.params} params, under 0.5% of the base model`,
   },
 ];
 
@@ -97,7 +112,7 @@ export const LEADERBOARD: LeaderboardRow[] = [
       werByDomain: wer(2.1, 3.4, 3.9),
       latencyP95: "131 ms",
       rtf: rtf(96),
-      extraCost: "Predictor: 1.2M params, ~6 GPU-h to train, 1.8 ms per utterance",
+      extraCost: `Predictor: ${PREDICTOR.params} params, ~${PREDICTOR.trainGpuHours} GPU-h to train, ${PREDICTOR.overheadMs} ms per utterance`,
     },
   },
   {
@@ -198,8 +213,8 @@ export const PREFERENCE = [
 export const PREDICTOR_STATS = [
   { label: "Frames under-predicted", value: "3.1%", note: "Predicted fewer steps than an oracle needed for < 0.05 dB loss" },
   { label: "Frames over-predicted", value: "11.4%", note: "Spent more than needed. Costs time, not quality" },
-  { label: "Predictor overhead", value: "1.8 ms", note: "Per utterance, included in every latency figure" },
-  { label: "Parameters", value: "1.2M", note: "Under 0.5% of the base model" },
+  { label: "Predictor overhead", value: `${PREDICTOR.overheadMs} ms`, note: "Per utterance, included in every latency figure" },
+  { label: "Parameters", value: PREDICTOR.params, note: "Under 0.5% of the base model" },
 ] as const;
 
 /** Where adaptive still loses to full steps. MOS delta vs. full steps. */
@@ -275,7 +290,7 @@ export const EVAL_SETS = [
 /** Inference pipeline for the field-note diagram. */
 export const PIPELINE = [
   { id: "text", tag: "Unchanged", label: "Text encoder", meta: "Phonemes → hidden states", detail: "Unchanged from the base model. Its hidden states are what the step predictor reads." },
-  { id: "predictor", tag: "New", label: "Step predictor", meta: "1.2M params · 1.8 ms", detail: "A small convolutional head that outputs a step count per frame, from 2 to 32, before any refinement runs." },
+  { id: "predictor", tag: "New", label: "Step predictor", meta: `${PREDICTOR.params} params · ${PREDICTOR.overheadMs} ms`, detail: "A small convolutional head that outputs a step count per frame, from 2 to 32, before any refinement runs." },
   { id: "scheduler", tag: "New", label: "Scheduler", meta: "Groups frames by budget", detail: "Packs frames with similar step counts so the GPU isn’t idling on frames that already finished." },
   { id: "refine", tag: "Modified", label: "Refinement loop", meta: "Triton kernel · 2–32 steps", detail: "The base model’s denoiser, run with a per-frame stop mask. Finished frames drop out of the batch." },
   { id: "vocoder", tag: "Unchanged", label: "Vocoder", meta: "Mel → 24 kHz audio", detail: "Unchanged. Adaptive inference ends before audio is synthesised." },
@@ -369,3 +384,136 @@ export const METHOD = [
       "Uniform reduction runs the base model at 8 steps. Step distillation trains an 8-step student from the same teacher. The full-step model is the unmodified 32-step reference.",
   },
 ] as const;
+
+// ------------------------------------------------------------------
+// Architecture breakdown: the home page's tabbed section. Every figure
+// is derived from the constants above, so the tabs can't drift from the
+// leaderboard, findings or metrics strip.
+// ------------------------------------------------------------------
+
+const ADAPTIVE_ROW = LEADERBOARD.find((r) => r.method === "Adaptive TTS")!;
+const FULL_ROW = LEADERBOARD.find((r) => r.method === "Full steps")!;
+const ms = (v: string) => Number.parseFloat(v);
+
+export type ArchitectureModule = {
+  id: "predictor" | "routing" | "guard";
+  label: string;
+  /** Pipeline stage this module corresponds to. */
+  stage: string;
+  /** One line under the tab label. */
+  meta: string;
+  summary: string;
+  stats: { label: string; value: string; note: string }[];
+  chart: {
+    title: string;
+    /** Upper bound of the bar scale. */
+    max: number;
+    rows: { label: string; value: number; display: string; key?: boolean }[];
+    note: string;
+  };
+  specs: { label: string; value: string }[];
+};
+
+export const ARCHITECTURE: ArchitectureModule[] = [
+  {
+    id: "predictor",
+    label: "Phoneme complexity predictor",
+    stage: "New · Stage 02",
+    meta: "Step count per frame, before refinement",
+    summary:
+      "A small convolutional head reads the text encoder’s phoneme states and predicts how many refinement steps each frame needs, from 2 to 32, before any of them run.",
+    stats: [
+      { label: "Parameters", value: PREDICTOR.params, note: "Under 0.5% of the base model" },
+      { label: "Overhead", value: `${PREDICTOR.overheadMs} ms`, note: "Per utterance, in every latency figure" },
+      { label: "Under-predicted", value: PREDICTOR_STATS[0].value, note: "The error that costs quality" },
+    ],
+    chart: {
+      title: "Mean steps per frame, by segment class",
+      max: STEP_BUDGET.fixed,
+      rows: SEGMENT_CLASSES.map((c, i) => ({
+        label: c.name,
+        value: c.steps,
+        display: c.steps.toFixed(1),
+        key: i === SEGMENT_CLASSES.length - 1,
+      })),
+      note: `Out of the ${STEP_BUDGET.fixed}-step budget. Silence is a quarter of the audio and under a tenth of the compute.`,
+    },
+    specs: [
+      { label: "Input", value: "Phoneme hidden states from the text encoder" },
+      { label: "Output", value: `Integer step count per frame, 2–${STEP_BUDGET.fixed}` },
+      { label: "Loss", value: "Under-prediction penalised 4× over-prediction" },
+      { label: "Training", value: `~${PREDICTOR.trainGpuHours} GPU-h against a per-frame oracle` },
+    ],
+  },
+  {
+    id: "routing",
+    label: "Dynamic compute routing",
+    stage: "New · Stage 03",
+    meta: "Frames grouped by predicted budget",
+    summary:
+      "The scheduler packs frames with similar step budgets into the same batch, so the GPU isn’t idling on frames that have already finished refining.",
+    stats: [
+      {
+        label: "Mean steps",
+        value: `${STEP_BUDGET.adaptiveMean}/${STEP_BUDGET.fixed}`,
+        note: "Per frame, across the test set",
+      },
+      {
+        label: "Steps skipped",
+        value: `${Math.round((1 - STEP_BUDGET.adaptiveMean / STEP_BUDGET.fixed) * 100)}%`,
+        note: "Refinement steps that never run",
+      },
+      {
+        label: "At batch 64",
+        value: `${BATCH_SPEEDUP[BATCH_SPEEDUP.length - 1].speedup.toFixed(1)}×`,
+        note: "The open systems problem",
+      },
+    ],
+    chart: {
+      title: "Wall-clock speedup, by batch size",
+      max: 3.5,
+      rows: BATCH_SPEEDUP.map((b, i) => ({
+        label: `Batch ${b.batch}`,
+        value: b.speedup,
+        display: `${b.speedup.toFixed(1)}×`,
+        key: i === 0,
+      })),
+      note: "A batch waits for its hardest frame. Regrouping by predicted budget recovers part of the loss.",
+    },
+    specs: [
+      { label: "Grouping", value: "Frames bucketed by predicted step count" },
+      { label: "Kernel", value: "Triton, with a per-frame stop mask" },
+      { label: "Batch sizes", value: BATCH_SPEEDUP.map((b) => b.batch).join(", ") },
+      { label: "Baseline", value: "Same base model and weights for every method" },
+    ],
+  },
+  {
+    id: "guard",
+    label: "Real-time latency guard",
+    stage: "Modified · Stage 04",
+    meta: "Per-frame stop mask, hard step cap",
+    summary: `Each frame stops at its predicted count and drops out of the batch. A hard cap at the full ${STEP_BUDGET.fixed}-step budget means no frame ever runs more steps than the base model would.`,
+    stats: [
+      { label: "Latency p50", value: ADAPTIVE_ROW.latency, note: `vs. ${FULL_ROW.latency} at full steps` },
+      { label: "Latency p95", value: ADAPTIVE_ROW.detail.latencyP95, note: `vs. ${FULL_ROW.detail.latencyP95} at full steps` },
+      { label: "Real-time factor", value: ADAPTIVE_ROW.detail.rtf, note: "Seconds of compute per second of audio" },
+    ],
+    chart: {
+      title: "Latency per utterance, one GPU",
+      max: ms(FULL_ROW.detail.latencyP95),
+      rows: [
+        { label: "Adaptive · p50", value: ms(ADAPTIVE_ROW.latency), display: ADAPTIVE_ROW.latency, key: true },
+        { label: "Adaptive · p95", value: ms(ADAPTIVE_ROW.detail.latencyP95), display: ADAPTIVE_ROW.detail.latencyP95 },
+        { label: "Full steps · p50", value: ms(FULL_ROW.latency), display: FULL_ROW.latency },
+        { label: "Full steps · p95", value: ms(FULL_ROW.detail.latencyP95), display: FULL_ROW.detail.latencyP95 },
+      ],
+      note: "Text in to mel out, after 50 warm-up runs. The vocoder is identical for every method and excluded.",
+    },
+    specs: [
+      { label: "Step cap", value: `${STEP_BUDGET.fixed} per frame, the full budget` },
+      { label: "Stop rule", value: "Finished frames leave the batch immediately" },
+      { label: "Predictor", value: `${PREDICTOR.overheadMs} ms, included in every figure` },
+      { label: "Hardware", value: "Single GPU, batch 1" },
+    ],
+  },
+];

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
+import { GridRails } from "@/components/GridRails";
 import { Providers } from "@/components/Providers";
 import "./globals.css";
 
@@ -37,8 +38,9 @@ export default function RootLayout({
       <body className="flex min-h-dvh flex-col">
         <Providers>
           <Nav />
-          <main id="main" className="flex-1">
+          <main id="main" className="relative flex-1">
             {children}
+            <GridRails />
           </main>
           <Footer />
         </Providers>

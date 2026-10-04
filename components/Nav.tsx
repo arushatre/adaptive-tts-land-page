@@ -16,7 +16,6 @@ export function Nav() {
   const [open, setOpen] = useState(false);
   const [lastPath, setLastPath] = useState(pathname);
   const [hovered, setHovered] = useState<string | null>(null);
-  const [scrolled, setScrolled] = useState(false);
   const menuId = useId();
 
   // Close the mobile menu after navigating.
@@ -32,17 +31,10 @@ export function Nav() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
   const active = NAV_LINKS.find(
     (l) => pathname === l.href || pathname.startsWith(`${l.href}/`),
   )?.href;
-  // The underline sits under the hovered link, or the current page at rest.
+  // The pill sits behind the hovered link, or the current page at rest.
   const marked = hovered ?? active ?? null;
 
   return (
@@ -70,11 +62,7 @@ export function Nav() {
         </Container>
       </div>
 
-      <header
-        className={`sticky top-0 z-40 border-b bg-paper transition-colors duration-300 ${
-          scrolled ? "border-rule" : "border-transparent"
-        }`}
-      >
+      <header className="sticky top-0 z-40 border-b border-rule bg-paper">
         <Container className="flex h-16 items-center justify-between">
           <Wordmark />
 
@@ -92,7 +80,7 @@ export function Nav() {
                       aria-current={active === link.href ? "page" : undefined}
                       onFocus={() => setHovered(link.href)}
                       onBlur={() => setHovered(null)}
-                      className={`meta relative flex items-center gap-1.5 px-3 py-2 transition-colors duration-300 hover:text-ink ${
+                      className={`meta relative isolate flex items-center gap-1.5 px-3.5 py-2 transition-colors duration-200 hover:text-ink ${
                         active === link.href ? "text-ink" : "text-muted"
                       }`}
                     >
@@ -107,10 +95,14 @@ export function Nav() {
                       ) : null}
                       {marked === link.href ? (
                         <motion.span
-                          layoutId="nav-underline"
+                          layoutId="nav-pill"
                           aria-hidden="true"
-                          className="absolute right-3 bottom-1 left-3 h-px bg-ink"
-                          transition={{ duration: 0.45, ease }}
+                          className={`absolute inset-0 -z-10 rounded-full border transition-colors duration-200 ${
+                            marked === active
+                              ? "border-accent-strong/40 bg-accent"
+                              : "border-ink/15 bg-paper-hover"
+                          }`}
+                          transition={{ duration: 0.4, ease }}
                         />
                       ) : null}
                     </Link>

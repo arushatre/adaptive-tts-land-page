@@ -1,4 +1,5 @@
 import { Container } from "./Container";
+import { Kicker } from "./Kicker";
 import { MetaLabel } from "./MetaLabel";
 import { Reveal } from "./Reveal";
 
@@ -17,10 +18,10 @@ export function PageIntro({
       <Container>
         <Reveal>
           <div className="flex flex-wrap items-baseline justify-between gap-4">
-            <MetaLabel>{label}</MetaLabel>
+            <Kicker>{label}</Kicker>
             <MetaLabel className="border border-rule px-2 py-1">Coming soon</MetaLabel>
           </div>
-          <h1 className="mt-8 max-w-[18ch] text-h2 font-normal text-balance">{title}</h1>
+          <h1 className="mt-8 max-w-[18ch] text-h2 font-medium text-balance">{title}</h1>
           <p className="mt-8 max-w-measure md:text-xl md:leading-[1.5]">{children}</p>
         </Reveal>
       </Container>

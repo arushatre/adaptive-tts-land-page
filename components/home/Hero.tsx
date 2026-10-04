@@ -2,10 +2,11 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import { Fragment } from "react";
-import { STEP_BUDGET } from "@/lib/content";
+import { PREDICTOR, STEP_BUDGET } from "@/lib/content";
 import { MODEL_STATUS } from "@/lib/site";
-import { ArrowLink } from "../ArrowLink";
+import { ArrowLink, PrimaryLink } from "../ArrowLink";
 import { Container } from "../Container";
+import { Kicker } from "../Kicker";
 import { MetaLabel } from "../MetaLabel";
 import { StepMask } from "./StepMask";
 
@@ -14,7 +15,7 @@ const ease = [0.22, 1, 0.36, 1] as const;
 
 const SPEC = [
   { label: "Base model", value: `${STEP_BUDGET.fixed}-step iterative TTS` },
-  { label: "Predictor", value: "1.2M params · 1.8 ms" },
+  { label: "Predictor", value: `${PREDICTOR.params} params · ${PREDICTOR.overheadMs} ms` },
   { label: "Hardware", value: "Single GPU, batch 1" },
   { label: "Status", value: `${MODEL_STATUS.model} · eval ${MODEL_STATUS.lastEval}` },
 ];
@@ -26,10 +27,18 @@ export function Hero() {
   const after = (0.1 + words.length * 0.055) * speed;
 
   return (
-    <section aria-labelledby="hero-title" className="pt-16 pb-24 md:pt-24 lg:pt-28 lg:pb-32">
+    <section
+      aria-labelledby="hero-title"
+      className="relative isolate pt-16 pb-24 md:pt-24 lg:pt-28 lg:pb-32"
+    >
+      {/* Hairline grid texture, fading out toward the content below. */}
+      <div
+        aria-hidden="true"
+        className="texture-grid pointer-events-none absolute inset-0 -z-10 [mask-image:linear-gradient(to_bottom,black_20%,transparent_65%)]"
+      />
       <Container>
         <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-          <MetaLabel>Adaptive inference for speech</MetaLabel>
+          <Kicker index={0}>Adaptive inference for speech</Kicker>
           <MetaLabel className="flex items-center gap-2">
             <span
               aria-hidden="true"
@@ -41,7 +50,7 @@ export function Hero() {
 
         <h1
           id="hero-title"
-          className="mt-8 max-w-[12.5em] text-hero font-normal text-balance"
+          className="mt-8 max-w-[12.5em] text-hero font-medium text-balance"
         >
           {words.map((word, i) => (
             <Fragment key={i}>
@@ -74,7 +83,10 @@ export function Hero() {
               Adaptive TTS predicts how many steps each frame actually needs, then
               turns the saved compute into real wall-clock speedup on the GPU.
             </p>
-            <ArrowLink href="#demo">Hear the difference</ArrowLink>
+            <div className="flex flex-wrap items-center gap-x-8 gap-y-5">
+              <PrimaryLink href="#demo">Hear the difference</PrimaryLink>
+              <ArrowLink href="#architecture">See the architecture</ArrowLink>
+            </div>
 
             <dl className="w-full border-t border-rule">
               {SPEC.map((row) => (

@@ -1,27 +1,29 @@
 import { ROLES } from "@/lib/content";
 import { CONTACT_EMAIL } from "@/lib/site";
-import { Arrow, ArrowLink } from "../ArrowLink";
+import { Arrow, PrimaryLink } from "../ArrowLink";
 import { Container } from "../Container";
+import { Kicker } from "../Kicker";
 import { MetaLabel } from "../MetaLabel";
 import { Reveal } from "../Reveal";
+import { Section } from "../Section";
 
-export function GetInvolved() {
+export function GetInvolved({ index }: { index?: number }) {
   return (
-    <section aria-labelledby="involved-title" className="pb-24 lg:pb-36">
+    <Section aria-labelledby="involved-title">
       <Container className="grid gap-12 lg:grid-cols-12 lg:gap-6">
         <Reveal className="lg:col-span-6">
-          <MetaLabel>Join the lab</MetaLabel>
+          <Kicker index={index}>Join the lab</Kicker>
           <h2
             id="involved-title"
-            className="mt-6 max-w-[26ch] text-lede font-normal text-balance"
+            className="mt-6 max-w-[26ch] text-lede font-medium text-balance"
           >
             Adaptive TTS is heading toward an open-source inference engine and a
             paper submission, and we&rsquo;re looking for collaborators and
             early testers along the way.
           </h2>
-          <ArrowLink href={`mailto:${CONTACT_EMAIL}`} className="mt-10">
+          <PrimaryLink href={`mailto:${CONTACT_EMAIL}`} className="mt-10">
             Write to the lab
-          </ArrowLink>
+          </PrimaryLink>
         </Reveal>
 
         <div className="lg:col-span-5 lg:col-start-8 lg:self-end">
@@ -46,6 +48,6 @@ export function GetInvolved() {
           </ul>
         </div>
       </Container>
-    </section>
+    </Section>
   );
 }

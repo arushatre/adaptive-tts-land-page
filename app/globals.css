@@ -3,8 +3,9 @@
 /* ------------------------------------------------------------------
    Adaptive TTS design tokens (source of truth: CLAUDE.md)
    Canvas is a toned-down warm stone; the single accent is a neutral
-   "bone" used for highlights only (selection, the leading row, the
-   spoken word). No saturated colour anywhere.
+   "bone" reserved for primary CTAs, active indicators and key data
+   points. No saturated colour anywhere. Dark "night" bands give the
+   page its high-contrast rhythm.
 ------------------------------------------------------------------ */
 @theme {
   /* Color: light canvas (default) */
@@ -17,7 +18,7 @@
   --color-accent: #d2cab9; /* neutral highlight: selection, top row */
   --color-accent-strong: #8c826f; /* data marks that need contrast */
 
-  /* Color: dark band (Proximal-style), used for exactly one section */
+  /* Color: dark bands (Proximal-style), alternated with the light canvas */
   --color-night: #111214;
   --color-night-raised: #17181b;
   --color-night-ink: #e4e2dc;
@@ -26,6 +27,10 @@
   --color-night-mark: #34312c; /* spoken-word marker on the dark band */
   --color-night-accent: #c9bfab;
 
+  /* Structural grid: a neutral hairline that reads on both canvases */
+  --color-grid: rgb(128 122 112 / 0.2);
+  --color-grid-faint: rgb(128 122 112 / 0.11);
+
   /* Type families (wired from next/font in app/layout.tsx) */
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
@@ -33,11 +38,11 @@
   /* Type scale */
   --text-hero: clamp(2.75rem, 1.35rem + 5.2vw, 6rem); /* 44 → 96px */
   --text-hero--line-height: 0.98;
-  --text-hero--letter-spacing: -0.04em;
+  --text-hero--letter-spacing: -0.05em;
 
   --text-h2: clamp(2.25rem, 1.75rem + 1.6vw, 3.25rem); /* 36 → 52px */
   --text-h2--line-height: 1.04;
-  --text-h2--letter-spacing: -0.03em;
+  --text-h2--letter-spacing: -0.04em;
 
   --text-lede: clamp(1.5rem, 1.2rem + 1vw, 2.25rem); /* 24 → 36px */
   --text-lede--line-height: 1.18;
@@ -142,8 +147,44 @@
 @utility section-y {
   padding-block: 6rem; /* 96 */
   @media (width >= 64rem) {
-    padding-block: 9rem; /* 144 */
+    padding-block: 8rem; /* 128 */
   }
+}
+
+/* The box the structural rails sit in: same width as Container, with
+   half its gutter, so rails run between the page edge and the content. */
+@utility rail-box {
+  margin-inline: auto;
+  width: 100%;
+  max-width: var(--container-page);
+  padding-inline: 0.75rem; /* 12 */
+  @media (width >= 48rem) {
+    padding-inline: 1.5rem; /* 24 */
+  }
+  @media (width >= 80rem) {
+    padding-inline: 2rem; /* 32 */
+  }
+}
+
+/* Registration mark where a rail crosses a section rule. Inherits color. */
+@utility crosshair {
+  background:
+    linear-gradient(currentColor, currentColor) center / 100% 1px no-repeat,
+    linear-gradient(currentColor, currentColor) center / 1px 100% no-repeat;
+}
+
+/* Hairline grid, used as a texture layer behind the hero. */
+@utility texture-grid {
+  background-image:
+    linear-gradient(to right, var(--color-grid-faint) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-grid-faint) 1px, transparent 1px);
+  background-size: 3rem 3rem;
+}
+
+/* Fine dot field for the dark bands. */
+@utility texture-dots {
+  background-image: radial-gradient(rgb(255 255 255 / 0.07) 1px, transparent 1px);
+  background-size: 1.25rem 1.25rem;
 }
 
 /* Hover "glide": a fill that sweeps in from the left behind a row.
